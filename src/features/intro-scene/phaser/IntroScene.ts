@@ -9,7 +9,8 @@ const LAYOUT = {
 } as const;
 
 const DIV_THICK = 10;
-const CHASE_START_MS = 3200;
+/** 开场无黑场动画后，略缩短再开始追逐与可点击 */
+const CHASE_START_MS = 1200;
 const CAUGHT_RADIUS = 44;
 const MAX_CHASERS = 6;
 const REINFORCE_EVERY_MS = 8000;
@@ -117,6 +118,9 @@ export default class IntroScene extends Phaser.Scene {
   private lampGroup?: Phaser.GameObjects.Container;
 
   private debuffUntil = 0;
+  /** 受击后仅影响“玩家”位置平滑，火柴人始终全速追该点 */
+  private chaseTargetX = 0;
+  private chaseTargetY = 0;
   private reinforceTimer?: Phaser.Time.TimerEvent;
   private weaponTimer?: Phaser.Time.TimerEvent;
   private nextWeaponDart = true;
@@ -143,6 +147,8 @@ export default class IntroScene extends Phaser.Scene {
     this.setupInput();
     this.time.delayedCall(CHASE_START_MS, () => {
       this.chaseEnabled = true;
+      this.chaseTargetX = this.input.activePointer.worldX;
+      this.chaseTargetY = this.input.activePointer.worldY;
       this.startReinforcements();
       this.startWeapons();
     });
@@ -234,27 +240,25 @@ export default class IntroScene extends Phaser.Scene {
     this.chasers.push({ container: c, speed: Phaser.Math.Between(95, 140), color });
   }
 
+  /** 朝目标一侧的手（世界坐标），从火柴人身体伸出 */
+  private getHandWorldPos(
+    container: Phaser.GameObjects.Container,
+    targetX: number,
+    targetY: number
+  ) {
+    const dx = targetX - container.x;
+    const localX = dx >= 0 ? 12 : -12;
+    const localY = -10;
+    return { x: container.x + localX, y: container.y + localY };
+  }
+
   private spawnProjectile() {
+    if (this.chasers.length === 0) return;
+
     const px = this.input.activePointer.worldX;
     const py = this.input.activePointer.worldY;
-    const edge = Phaser.Math.Between(0, 3);
-    const w = this.width;
-    const h = this.height;
-    let sx = w / 2;
-    let sy = h / 2;
-    if (edge === 0) {
-      sx = -20;
-      sy = Phaser.Math.Between(0, h);
-    } else if (edge === 1) {
-      sx = w + 20;
-      sy = Phaser.Math.Between(0, h);
-    } else if (edge === 2) {
-      sx = Phaser.Math.Between(0, w);
-      sy = -20;
-    } else {
-      sx = Phaser.Math.Between(0, w);
-      sy = h + 20;
-    }
+    const shooter = this.chasers[Phaser.Math.Between(0, this.chasers.length - 1)];
+    const { x: sx, y: sy } = this.getHandWorldPos(shooter.container, px, py);
 
     const kind = this.nextWeaponDart ? "dart" : "hammer";
     this.nextWeaponDart = !this.nextWeaponDart;
@@ -265,16 +269,19 @@ export default class IntroScene extends Phaser.Scene {
     const speed = kind === "dart" ? 520 : 180;
     const vx = (dx / len) * speed;
     const vy = (dy / len) * speed;
+    const angle = Math.atan2(dy, dx);
 
     let go: Phaser.GameObjects.Triangle | Phaser.GameObjects.Container;
     if (kind === "dart") {
       const tri = this.add.triangle(sx, sy, 0, -6, 10, 0, 0, 6, 0x22c55e);
       tri.setStrokeStyle(1, 0x14532d);
+      tri.setRotation(angle);
       go = tri;
     } else {
-      const head = this.add.rectangle(0, 0, 22, 16, 0x78716c);
-      const handle = this.add.rectangle(-18, 0, 14, 4, 0x57534e);
+      const head = this.add.rectangle(10, 0, 22, 16, 0x78716c);
+      const handle = this.add.rectangle(-4, 0, 14, 4, 0x57534e);
       const cont = this.add.container(sx, sy, [handle, head]);
+      cont.setRotation(angle);
       go = cont;
     }
 
@@ -528,85 +535,27 @@ export default class IntroScene extends Phaser.Scene {
     }
   }
 
+  /** 已取消黑场/眼睑「睁眼」动画，开场即全亮并显示提示。 */
   private playOpeningSequence() {
-    const { width, height } = this.scale;
+    this.cameras.main.setAlpha(1);
 
-    const blackOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000);
-    const topLid = this.add.rectangle(width / 2, height / 4, width, height / 2, 0x000000);
-    const bottomLid = this.add.rectangle(width / 2, height * 0.75, width, height / 2, 0x000000);
-
-    this.cameras.main.setAlpha(0.6);
-
-    this.time.delayedCall(300, () => {
-      this.tweens.add({
-        targets: [topLid],
-        y: -height / 4,
-        duration: 1000,
-        ease: "Sine.easeOut",
-      });
-
-      this.tweens.add({
-        targets: [bottomLid],
-        y: height + height / 4,
-        duration: 1000,
-        ease: "Sine.easeOut",
-      });
-
-      this.tweens.add({
-        targets: blackOverlay,
-        alpha: 0,
-        duration: 1000,
-        onComplete: () => {
-          blackOverlay.destroy();
-          topLid.destroy();
-          bottomLid.destroy();
-        },
-      });
-
-      this.tweens.add({
-        targets: this.cameras.main,
-        alpha: 1,
-        duration: 1000,
-      });
-    });
-
-    this.time.delayedCall(1400, () => {
-      if (!this.exclamationMark) return;
-      this.tweens.add({
-        targets: this.exclamationMark,
-        alpha: 1,
-        y: this.exclamationMark.y - 6,
-        duration: 220,
-        yoyo: true,
-      });
-    });
-
-    this.time.delayedCall(1900, () => {
-      if (!this.speechBubble) return;
-      this.tweens.add({
-        targets: this.speechBubble,
-        alpha: 1,
-        duration: 280,
-      });
-    });
-
-    this.time.delayedCall(2200, () => {
-      if (!this.topHint) return;
-      this.tweens.add({
-        targets: this.topHint,
-        alpha: 0.9,
-        duration: 450,
-      });
-    });
+    if (this.exclamationMark) {
+      this.exclamationMark.setAlpha(1);
+    }
+    if (this.speechBubble) {
+      this.speechBubble.setAlpha(1);
+    }
+    if (this.topHint) {
+      this.topHint.setAlpha(0.9);
+    }
   }
 
   private moveChaserToward(chaser: Chaser, tx: number, ty: number, delta: number) {
-    const slow = this.time.now < this.debuffUntil ? 0.45 : 1;
     const { x, y } = chaser.container;
     const dx = tx - x;
     const dy = ty - y;
     const len = Math.hypot(dx, dy) || 1;
-    const step = chaser.speed * slow * (delta / 1000);
+    const step = chaser.speed * (delta / 1000);
     let nx = x + (dx / len) * Math.min(step, len);
     let ny = y + (dy / len) * Math.min(step, len);
 
@@ -717,17 +666,25 @@ export default class IntroScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     if (this.hasEntered || !this.chaseEnabled) return;
 
-    const px = this.input.activePointer.worldX;
-    const py = this.input.activePointer.worldY;
+    const rx = this.input.activePointer.worldX;
+    const ry = this.input.activePointer.worldY;
+    const debuffed = this.time.now < this.debuffUntil;
+    const followK = debuffed ? 5.5 : 18;
+    const t = Math.min(1, (followK * delta) / 1000);
+    this.chaseTargetX += (rx - this.chaseTargetX) * t;
+    this.chaseTargetY += (ry - this.chaseTargetY) * t;
 
     for (const c of this.chasers) {
-      this.moveChaserToward(c, px, py, delta);
+      this.moveChaserToward(c, this.chaseTargetX, this.chaseTargetY, delta);
     }
     this.separateChasers();
 
     for (const c of this.chasers) {
       const { x, y } = c.container;
-      if (distSq(x, y, px, py) < CAUGHT_RADIUS * CAUGHT_RADIUS) {
+      if (
+        distSq(x, y, this.chaseTargetX, this.chaseTargetY) <
+        CAUGHT_RADIUS * CAUGHT_RADIUS
+      ) {
         this.tryEnter();
         break;
       }
