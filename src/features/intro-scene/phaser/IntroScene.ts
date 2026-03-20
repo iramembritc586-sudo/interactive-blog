@@ -48,6 +48,7 @@ const COLORS = {
 } as const;
 
 type AxisRect = { left: number; top: number; right: number; bottom: number };
+type Point = { x: number; y: number };
 
 type Chaser = {
   container: Phaser.GameObjects.Container;
@@ -133,6 +134,11 @@ export default class IntroScene extends Phaser.Scene {
   private hasEntered = false;
   private chaseEnabled = false;
   private walkable: AxisRect[] = [];
+  private downstairsRect?: AxisRect;
+  private upstairsRect?: AxisRect;
+  private stairsRect?: AxisRect;
+  private stairBottom?: Point;
+  private stairTop?: Point;
 
   private exclamationMark?: Phaser.GameObjects.Text;
   private speechBubble?: Phaser.GameObjects.Container;
@@ -190,11 +196,24 @@ export default class IntroScene extends Phaser.Scene {
     const stairsLeft = leftRoomRight;
     const stairsRight = stairsLeft + w * LAYOUT.stairsWidth;
 
-    this.walkable = [
-      { left: wallT, top: floor1Y, right: w - wallT, bottom: h - 8 },
-      { left: wallT, top: 8, right: w - wallT, bottom: floor2H - 12 },
-      { left: stairsLeft + 8, top: floor2H * 0.24, right: stairsRight - 6, bottom: floor1Y + (h - floor1Y) * 0.98 },
-    ];
+    this.downstairsRect = { left: wallT, top: floor1Y, right: w - wallT, bottom: h - 8 };
+    this.upstairsRect = { left: wallT, top: 8, right: w - wallT, bottom: floor2H - 12 };
+    this.stairsRect = {
+      left: stairsLeft + 8,
+      top: floor2H * 0.24,
+      right: stairsRight - 6,
+      bottom: floor1Y + (h - floor1Y) * 0.98,
+    };
+
+    this.walkable = [this.downstairsRect, this.upstairsRect, this.stairsRect];
+    this.stairBottom = {
+      x: (this.stairsRect.left + this.stairsRect.right) / 2,
+      y: this.downstairsRect.top + (this.downstairsRect.bottom - this.downstairsRect.top) * 0.82,
+    };
+    this.stairTop = {
+      x: this.stairsRect.left + (this.stairsRect.right - this.stairsRect.left) * 0.7,
+      y: this.upstairsRect.bottom - Math.min(24, floor2H * 0.08),
+    };
   }
 
   private setupInput() {
@@ -202,6 +221,33 @@ export default class IntroScene extends Phaser.Scene {
       this.chaseTargetX = pointer.worldX;
       this.chaseTargetY = pointer.worldY;
     });
+  }
+
+
+  private getFloorZone(x: number, y: number) {
+    if (this.upstairsRect && pointInAnyRect(x, y, [this.upstairsRect])) return "upstairs" as const;
+    if (this.downstairsRect && pointInAnyRect(x, y, [this.downstairsRect])) return "downstairs" as const;
+    if (this.stairsRect && pointInAnyRect(x, y, [this.stairsRect])) return "stairs" as const;
+    return "stairs" as const;
+  }
+
+  private getChaseWaypoint(chaser: Chaser, tx: number, ty: number) {
+    const chaserZone = this.getFloorZone(chaser.container.x, chaser.container.y);
+    const targetZone = this.getFloorZone(tx, ty);
+
+    if (chaserZone === "downstairs" && targetZone === "upstairs" && this.stairBottom) {
+      if (distSq(chaser.container.x, chaser.container.y, this.stairBottom.x, this.stairBottom.y) > 22 * 22) {
+        return this.stairBottom;
+      }
+    }
+
+    if (chaserZone === "upstairs" && targetZone === "downstairs" && this.stairTop) {
+      if (distSq(chaser.container.x, chaser.container.y, this.stairTop.x, this.stairTop.y) > 22 * 22) {
+        return this.stairTop;
+      }
+    }
+
+    return { x: tx, y: ty };
   }
 
   private tryEnter() {
@@ -892,7 +938,8 @@ export default class IntroScene extends Phaser.Scene {
     this.chaseTargetY += (ry - this.chaseTargetY) * t;
 
     for (const c of this.chasers) {
-      this.moveChaserToward(c, this.chaseTargetX, this.chaseTargetY, delta);
+      const waypoint = this.getChaseWaypoint(c, this.chaseTargetX, this.chaseTargetY);
+      this.moveChaserToward(c, waypoint.x, waypoint.y, delta);
     }
     this.separateChasers();
 
