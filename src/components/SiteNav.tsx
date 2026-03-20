@@ -9,6 +9,7 @@ const links = [
   { href: "/blog", label: "Blog" },
   { href: "/projects", label: "Projects" },
   { href: "/contact", label: "Contact" },
+  { href: "/login", label: "Login" },
 ] as const;
 
 export default function SiteNav() {
