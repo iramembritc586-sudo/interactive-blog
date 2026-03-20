@@ -24,3 +24,377 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.auth-page {
+  position: relative;
+  min-height: calc(100vh - 65px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(190, 150, 83, 0.12), transparent 28%),
+    radial-gradient(circle at bottom, rgba(31, 77, 125, 0.22), transparent 30%),
+    linear-gradient(180deg, #07090f 0%, #050608 100%);
+  color: #f5ead4;
+}
+
+.auth-page__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black 32%, transparent 100%);
+  opacity: 0.23;
+}
+
+.auth-page__panel {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+  display: flex;
+  min-height: calc(100vh - 65px);
+  max-width: 1100px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 4rem 1.5rem 5rem;
+}
+
+.auth-page__panel--wide {
+  align-items: stretch;
+}
+
+.auth-page__copy {
+  display: flex;
+  max-width: 760px;
+  flex-direction: column;
+  gap: 0.85rem;
+  text-align: center;
+}
+
+.auth-page__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.5em;
+  font-size: 0.72rem;
+  color: rgba(230, 197, 136, 0.82);
+}
+
+.auth-page__title {
+  font-size: clamp(2.2rem, 4vw, 4.5rem);
+  line-height: 1.08;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+.auth-page__lede {
+  color: rgba(236, 224, 203, 0.72);
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.auth-input-wrap,
+.auth-form-field {
+  display: flex;
+  width: min(100%, 360px);
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.auth-form-field {
+  width: 100%;
+}
+
+.auth-form-field span {
+  color: rgba(245, 234, 212, 0.84);
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid rgba(226, 197, 141, 0.22);
+  background: rgba(5, 7, 12, 0.76);
+  padding: 0.95rem 1.25rem;
+  color: #f7f1e1;
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 0 40px rgba(255, 208, 129, 0.04);
+}
+
+.auth-input:focus {
+  border-color: rgba(115, 175, 255, 0.45);
+  box-shadow: 0 0 0 4px rgba(60, 110, 194, 0.12);
+}
+
+.compass-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.compass-ring {
+  position: relative;
+  display: grid;
+  height: min(72vw, 420px);
+  width: min(72vw, 420px);
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(233, 214, 174, 0.12);
+  background:
+    radial-gradient(circle at center, rgba(211, 167, 89, 0.14) 0%, rgba(18, 20, 25, 0.9) 42%, rgba(5, 6, 8, 1) 100%);
+  box-shadow:
+    inset 0 0 80px rgba(255, 207, 119, 0.06),
+    0 0 80px rgba(0, 0, 0, 0.42);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.compass-ring:active {
+  cursor: grabbing;
+}
+
+.compass-outline,
+.compass-tick {
+  stroke: rgba(231, 210, 170, 0.25);
+  stroke-width: 1.5;
+}
+
+.compass-outer-shadow {
+  position: absolute;
+  inset: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 157, 82, 0.18);
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.55);
+}
+
+.compass-face {
+  position: relative;
+  display: grid;
+  height: 74%;
+  width: 74%;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 231, 200, 0.08);
+  background: radial-gradient(circle, rgba(45, 34, 19, 0.94) 0%, rgba(12, 12, 15, 0.94) 72%);
+  transition: transform 120ms linear;
+}
+
+.compass-orbit {
+  position: absolute;
+  border-radius: 999px;
+  border: 1px solid rgba(230, 214, 185, 0.08);
+}
+
+.compass-orbit--outer {
+  inset: 11%;
+}
+
+.compass-orbit--mid {
+  inset: 23%;
+}
+
+.compass-needle {
+  position: absolute;
+  width: 5px;
+  border-radius: 999px;
+  transform-origin: center bottom;
+}
+
+.compass-needle--north {
+  height: 34%;
+  transform: translateY(-18%) rotate(0deg);
+  background: linear-gradient(180deg, #f0e5c7 0%, #8e6c34 100%);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.compass-needle--south {
+  height: 28%;
+  transform: translateY(22%) rotate(180deg);
+  background: linear-gradient(180deg, rgba(120, 164, 224, 0.95) 0%, rgba(17, 34, 58, 0.3) 100%);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.compass-center {
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #d9c18f 0%, #7d6030 60%, #24180b 100%);
+  box-shadow: 0 0 24px rgba(221, 180, 107, 0.35);
+}
+
+.compass-glyph {
+  position: absolute;
+  font-size: 0.92rem;
+  letter-spacing: 0.28em;
+  color: rgba(245, 232, 205, 0.72);
+}
+
+.compass-glyph--top { top: 10%; }
+.compass-glyph--right { right: 10%; }
+.compass-glyph--bottom { bottom: 10%; }
+.compass-glyph--left { left: 10%; }
+
+.compass-segments {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.compass-segment {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 22px;
+  width: 3px;
+  margin: -11px 0 0 -1.5px;
+  border-radius: 999px;
+  opacity: 0;
+}
+
+.compass-ring--scan .compass-segment {
+  background: linear-gradient(180deg, rgba(130, 189, 255, 0), rgba(106, 190, 255, 1), rgba(130, 189, 255, 0));
+  animation: scanPulse 1.4s linear infinite;
+}
+
+.compass-ring--failure .compass-segment {
+  background: linear-gradient(180deg, rgba(255, 83, 83, 0), rgba(255, 83, 83, 1), rgba(255, 83, 83, 0));
+  animation: failRun 1.3s linear 1;
+}
+
+.compass-ring--success {
+  box-shadow:
+    inset 0 0 80px rgba(53, 232, 152, 0.12),
+    0 0 80px rgba(33, 179, 121, 0.18);
+}
+
+.compass-success-burst {
+  position: absolute;
+  inset: 16%;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.compass-success-ray {
+  position: absolute;
+  width: 3px;
+  border-radius: 999px;
+  transform-origin: bottom center;
+  background: linear-gradient(180deg, rgba(130, 255, 188, 0.05), rgba(77, 247, 148, 0.96), rgba(130, 255, 188, 0));
+  animation: successRay 1.45s ease-out forwards;
+  filter: drop-shadow(0 0 10px rgba(95, 255, 175, 0.55));
+}
+
+.auth-page__actions {
+  display: flex;
+  justify-content: center;
+}
+
+.auth-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.9rem 1.3rem;
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.auth-link:hover {
+  transform: translateY(-1px);
+}
+
+.auth-link--secondary,
+.auth-link--ghost {
+  border: 1px solid rgba(228, 205, 159, 0.2);
+  color: #f4e8cc;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.auth-link--primary {
+  border: 1px solid rgba(92, 209, 150, 0.3);
+  background: linear-gradient(135deg, rgba(55, 163, 110, 0.3), rgba(77, 247, 148, 0.18));
+  color: #dffbe9;
+}
+
+.auth-card-stack {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.auth-card {
+  border-radius: 28px;
+  border: 1px solid rgba(231, 202, 150, 0.12);
+  background: rgba(10, 11, 17, 0.8);
+  padding: 1.8rem;
+  box-shadow: inset 0 0 40px rgba(255, 210, 122, 0.03);
+}
+
+.auth-card h2 {
+  margin-bottom: 1rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.auth-card p,
+.auth-card li {
+  color: rgba(243, 232, 210, 0.75);
+  line-height: 1.8;
+}
+
+.auth-card ul {
+  display: grid;
+  gap: 0.65rem;
+  padding-left: 1.1rem;
+}
+
+.auth-card--aside {
+  align-self: start;
+}
+
+.auth-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(226, 197, 141, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.75rem 1rem;
+}
+
+.auth-sequence-preview {
+  min-height: 72px;
+  border-radius: 20px;
+  border: 1px dashed rgba(226, 197, 141, 0.18);
+  padding: 1rem;
+}
+
+@keyframes scanPulse {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 1; }
+}
+
+@keyframes failRun {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes successRay {
+  0% { opacity: 0; transform: scaleY(0.15); }
+  20% { opacity: 0.9; }
+  100% { opacity: 0; transform: scaleY(1.08); }
+}
+
+@media (max-width: 768px) {
+  .auth-page__panel {
+    padding-top: 2.5rem;
+  }
+
+  .auth-page__title {
+    font-size: 2.3rem;
+  }
+}
