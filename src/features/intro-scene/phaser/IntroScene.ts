@@ -9,7 +9,6 @@ const LAYOUT = {
 
 const DIV_THICK = 10;
 const CHASE_START_MS = 1200;
-const CAUGHT_RADIUS = 44;
 const MAX_CHASERS = 6;
 const REINFORCE_EVERY_MS = 8000;
 const WEAPON_EVERY_MS = 4500;
@@ -55,6 +54,7 @@ type Chaser = {
   speed: number;
   color: number;
   phase: number;
+  variant: StickmanVariant;
 };
 
 type Projectile = {
@@ -77,6 +77,26 @@ function distSq(ax: number, ay: number, bx: number, by: number) {
   const dx = ax - bx;
   const dy = ay - by;
   return dx * dx + dy * dy;
+}
+
+function pointToSegmentDistanceSq(
+  px: number,
+  py: number,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number
+) {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const ab2 = abx * abx + aby * aby;
+  if (ab2 === 0) return distSq(px, py, ax, ay);
+  const apx = px - ax;
+  const apy = py - ay;
+  const t = Phaser.Math.Clamp((apx * abx + apy * aby) / ab2, 0, 1);
+  const cx = ax + abx * t;
+  const cy = ay + aby * t;
+  return distSq(px, py, cx, cy);
 }
 
 function clampToRect(px: number, py: number, r: AxisRect) {
@@ -178,9 +198,9 @@ export default class IntroScene extends Phaser.Scene {
   }
 
   private setupInput() {
-    this.input.on("pointerdown", () => {
-      if (this.hasEntered || !this.chaseEnabled) return;
-      this.tryEnter();
+    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+      this.chaseTargetX = pointer.worldX;
+      this.chaseTargetY = pointer.worldY;
     });
   }
 
@@ -234,6 +254,7 @@ export default class IntroScene extends Phaser.Scene {
       speed: Phaser.Math.Between(95, 140),
       color,
       phase: Phaser.Math.FloatBetween(0, Math.PI * 2),
+      variant,
     });
   }
 
@@ -699,13 +720,8 @@ export default class IntroScene extends Phaser.Scene {
     const blue = this.createStickmanContainer(width * 0.14, floor1Y + floor1H * 0.58, palette[0], storyDepth, "runLeft");
     const yellow = this.createStickmanContainer(width * 0.79, height * 0.26, palette[1], storyDepth, "runRight");
 
-    const cig = this.add.rectangle(14, -6, 8, 2, 0xd1d5db);
-    const ember = this.add.circle(18, -6, 1.6, 0xff6b6b);
-    blue.add([cig, ember]);
-    this.createSmokeForContainer(blue, 22, -18, storyDepth);
-
     this.topHint = this.add
-      .text(width / 2, 36, "他们发现你了，点击进入；不然就会被追上。", {
+      .text(width / 2, 36, "他们发现你了，被人物碰到就会进入。", {
         fontSize: "16px",
         color: "#e8ddcf",
       })
@@ -735,33 +751,18 @@ export default class IntroScene extends Phaser.Scene {
     this.speechBubble = this.add.container(0, 0, [bubbleBg, bubbleText]).setAlpha(0).setDepth(storyDepth);
     yellow.add([this.exclamationMark, this.speechBubble]);
 
-    this.chasers.push({ container: blue, speed: 120, color: palette[0], phase: 0 });
-    this.chasers.push({ container: yellow, speed: 115, color: palette[1], phase: Math.PI / 2 });
-    this.spawnChaserAt(width * 0.33, floor1Y + floor1H * 0.62, palette[2], "jump");
-    this.spawnChaserAt(width * 0.63, floor1Y + floor1H * 0.74, palette[3], "idle");
-    this.spawnChaserAt(width * 0.56, height * 0.24, palette[4], "victory");
+    this.chasers.push({ container: blue, speed: 120, color: palette[0], phase: 0, variant: "runLeft" });
+    this.chasers.push({ container: yellow, speed: 115, color: palette[1], phase: Math.PI / 2, variant: "runRight" });
   }
 
-  private createSmokeForContainer(parent: Phaser.GameObjects.Container, ox: number, oy: number, depth: number) {
-    for (let i = 0; i < 3; i++) {
-      const puff = this.add.circle(ox + i * 5, oy - i * 6, 5 - i, 0xd1d5db, 0.45);
-      puff.setDepth(depth);
-      parent.add(puff);
-      this.tweens.add({
-        targets: puff,
-        y: puff.y - 24,
-        x: puff.x + Phaser.Math.Between(-5, 5),
-        alpha: 0,
-        duration: 2000 + i * 280,
-        repeat: -1,
-        repeatDelay: 180,
-        onRepeat: () => {
-          puff.setY(oy - i * 6);
-          puff.setX(ox + i * 5);
-          puff.setAlpha(0.45);
-        },
-      });
-    }
+  private isPointerTouchingChaser(chaser: Chaser, px: number, py: number) {
+    const { x, y } = chaser.container;
+    if (distSq(px, py, x, y - 22) <= 10 * 10) return true;
+    if (distSq(px, py, x, y + 2) <= 13 * 13) return true;
+
+    const pose = this.getStickPose(chaser.variant);
+    const limbs = [pose.leftArm, pose.rightArm, pose.leftLeg, pose.rightLeg];
+    return limbs.some(([ax, ay, bx, by]) => pointToSegmentDistanceSq(px, py, x + ax, y + ay, x + bx, y + by) <= 3.5 * 3.5);
   }
 
   private playOpeningSequence() {
@@ -896,8 +897,7 @@ export default class IntroScene extends Phaser.Scene {
     this.separateChasers();
 
     for (const c of this.chasers) {
-      const { x, y } = c.container;
-      if (distSq(x, y, this.chaseTargetX, this.chaseTargetY) < CAUGHT_RADIUS * CAUGHT_RADIUS) {
+      if (this.isPointerTouchingChaser(c, rx, ry)) {
         this.tryEnter();
         break;
       }
