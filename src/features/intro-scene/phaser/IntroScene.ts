@@ -235,15 +235,27 @@ export default class IntroScene extends Phaser.Scene {
     const chaserZone = this.getFloorZone(chaser.container.x, chaser.container.y);
     const targetZone = this.getFloorZone(tx, ty);
 
-    if (chaserZone === "downstairs" && targetZone === "upstairs" && this.stairBottom) {
-      if (distSq(chaser.container.x, chaser.container.y, this.stairBottom.x, this.stairBottom.y) > 22 * 22) {
-        return this.stairBottom;
+    if (targetZone === "upstairs") {
+      if (chaserZone === "downstairs" && this.stairBottom) {
+        if (distSq(chaser.container.x, chaser.container.y, this.stairBottom.x, this.stairBottom.y) > 22 * 22) {
+          return this.stairBottom;
+        }
+      }
+
+      if (chaserZone === "stairs" && this.stairTop) {
+        return this.stairTop;
       }
     }
 
-    if (chaserZone === "upstairs" && targetZone === "downstairs" && this.stairTop) {
-      if (distSq(chaser.container.x, chaser.container.y, this.stairTop.x, this.stairTop.y) > 22 * 22) {
-        return this.stairTop;
+    if (targetZone === "downstairs") {
+      if (chaserZone === "upstairs" && this.stairTop) {
+        if (distSq(chaser.container.x, chaser.container.y, this.stairTop.x, this.stairTop.y) > 22 * 22) {
+          return this.stairTop;
+        }
+      }
+
+      if (chaserZone === "stairs" && this.stairBottom) {
+        return this.stairBottom;
       }
     }
 
