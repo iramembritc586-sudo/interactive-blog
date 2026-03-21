@@ -50,6 +50,13 @@ export default function HomePage() {
           <p className="text-neutral-600 dark:text-neutral-400">
             使用顶部导航访问 About、Blog、Projects 与 Contact。
           </p>
+          <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-5 text-sm text-emerald-950 shadow-sm dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-100">
+            <p className="font-semibold">Page Agent 已接入</p>
+            <p className="mt-2 leading-6 text-emerald-900/80 dark:text-emerald-100/80">
+              页面右下角会在脚本加载后出现 Page Agent 控件。你可以直接输入自然语言，
+              让它帮你点击导航、浏览页面内容或执行基础网页交互。
+            </p>
+          </div>
         </div>
       </section>
     </main>
