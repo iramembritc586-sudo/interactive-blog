@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PageAgentEmbed from "@/src/components/PageAgentEmbed";
 import SiteNav from "@/src/components/SiteNav";
 import "./globals.css";
 
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="min-h-screen antialiased">
+        <PageAgentEmbed />
         <SiteNav />
         {children}
       </body>
